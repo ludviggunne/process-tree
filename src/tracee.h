@@ -92,16 +92,6 @@ void tracee_chdir(struct tracee *tracee, const char *dir);
 int tracee_read_info_from_proc_dir(struct tracee *tracee);
 
 /*
- * Get command line arguments from execve arguments.
- */
-int tracee_set_argv_from_execve_call(struct tracee *tracee, struct ptrace_syscall_info *info);
-
-/*
- * Get environment from execve arguments.
- */
-int tracee_set_envp_from_execve_call(struct tracee *tracee, struct ptrace_syscall_info *info);
-
-/*
  * Get working directory from chdir arguments.
  */
 int tracee_set_cwd_from_chdir_call(struct tracee *tracee, struct ptrace_syscall_info *info);

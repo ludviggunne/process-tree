@@ -31,6 +31,9 @@ static void sigint_handler(int);
 static struct options options = {0};
 static struct tracee *root = NULL;
 
+static char **execve_argv = NULL;
+static char **execve_envp = NULL;
+
 int main(int argc, char **argv)
 {
 	options_parse_cmdline(&options, argc, argv);
@@ -63,7 +66,7 @@ int main(int argc, char **argv)
 			continue;
 		}
 
-		if (WIFEXITED(status))
+		if (WIFEXITED(status) || status_is_exit_event(status))
 		{
 			handle_exit(tracee);
 			continue;
@@ -74,7 +77,9 @@ int main(int argc, char **argv)
 			(void) tracee_set_ptrace_options(tracee);
 		}
 
-		bool is_new_tracee = status_is_clone(status) || status_is_fork(status) || status_is_vfork(status);
+		bool is_new_tracee = status_is_clone_event(status)
+		                  || status_is_fork_event(status)
+		                  || status_is_vfork_event(status);
 
 		if (is_new_tracee)
 		{
@@ -86,6 +91,18 @@ int main(int argc, char **argv)
 		if (status_is_syscall(status))
 		{
 			handle_syscall(tracee);
+			continue_tracee(tid);
+			continue;
+		}
+
+		if (status_is_execve_event(status))
+		{
+			tracee->argv = execve_argv;
+			tracee->envp = execve_envp;
+
+			execve_argv = NULL;
+			execve_envp = NULL;
+
 			continue_tracee(tid);
 			continue;
 		}
@@ -244,8 +261,8 @@ static void handle_syscall(struct tracee *tracee)
 	switch (info.entry.nr)
 	{
 	case SYS_execve:
-		(void) tracee_set_argv_from_execve_call(tracee, &info);
-		(void) tracee_set_envp_from_execve_call(tracee, &info);
+		execve_argv = tracee_read_string_list(tracee, info.entry.args[1]);
+		execve_envp = tracee_read_string_list(tracee, info.entry.args[2]);
 		break;
 
 	case SYS_chdir:

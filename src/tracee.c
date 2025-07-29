@@ -257,28 +257,6 @@ int tracee_read_info_from_proc_dir(struct tracee *tracee)
 	return 0;
 }
 
-int tracee_set_argv_from_execve_call(struct tracee *tracee, struct ptrace_syscall_info *info)
-{
-	assert(info->op == PTRACE_SYSCALL_INFO_ENTRY);
-	assert(info->entry.nr == SYS_execve);
-
-	free_string_list(tracee->argv);
-	tracee->argv = tracee_read_string_list(tracee, info->entry.args[1]);
-
-	return 0;
-}
-
-int tracee_set_envp_from_execve_call(struct tracee *tracee, struct ptrace_syscall_info *info)
-{
-	assert(info->op == PTRACE_SYSCALL_INFO_ENTRY);
-	assert(info->entry.nr == SYS_execve);
-
-	free_string_list(tracee->envp);
-	tracee->envp = tracee_read_string_list(tracee, info->entry.args[2]);
-
-	return 0;
-}
-
 int tracee_set_cwd_from_chdir_call(struct tracee *tracee, struct ptrace_syscall_info *info)
 {
 	assert(info->op == PTRACE_SYSCALL_INFO_ENTRY);
