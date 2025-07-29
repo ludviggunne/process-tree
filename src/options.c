@@ -23,6 +23,7 @@ static void usage(struct options *options, FILE *f)
 	        "    -e/--exclude <pattern>   Exclude processes with arguments matching regular expression <pattern>.\n"
 	        "    -s/--silent              Redirect child processes stdout and stderr to /dev/null.\n"
 	        "    -r/--redirect            Redirect child processes stdout to stderr.\n"
+	        "    -n/--no-env              Exclude environment from output.\n"
 	        "    -f/--format <format>     Specify output format. May be one of:\n",
 	        options->program_name);
 
@@ -132,6 +133,12 @@ void options_parse_cmdline(struct options *options, int argc, char **argv)
 		if (strcmp("-r", argv[i]) == 0 || strcmp("--redirect", argv[i]) == 0)
 		{
 			options->redirect = true;
+			continue;
+		}
+
+		if (strcmp("-n", argv[i]) == 0 || strcmp("--no-env", argv[i]) == 0)
+		{
+			options->exclude_environ = true;
 			continue;
 		}
 

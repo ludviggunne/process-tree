@@ -36,6 +36,9 @@ struct options {
 
 	/* Redirect stdout to stderr. */
 	bool redirect;
+
+	/* Exclude environment from output. */
+	bool exclude_environ;
 };
 
 /*

@@ -68,7 +68,7 @@ void output_fn_json(FILE *f, struct tracee *tracee, struct options *options)
 		fprintf(f, "]");
 	}
 
-	if (tracee->envp)
+	if (tracee->envp && !options->exclude_environ)
 	{
 		fprintf(f, ",\"environment\":{");
 
