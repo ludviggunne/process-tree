@@ -329,7 +329,7 @@ int tracee_read_cl_args(struct tracee *tracee, struct ptrace_syscall_info *info)
 		return -1;
 	}
 
-	tracee->next_child_is_a_thread = flags | CLONE_THREAD;
+	tracee->next_child_is_a_thread = flags & CLONE_THREAD;
 
 	return 0;
 }
