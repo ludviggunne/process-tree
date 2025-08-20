@@ -10,6 +10,7 @@ sources=          \
 	src/output.c      \
 	src/output-tree.c \
 	src/output-json.c \
+	src/output-plain.c \
 
 objects=$(sources:%.c=%.o)
 depends=$(sources:%.c=%.d)

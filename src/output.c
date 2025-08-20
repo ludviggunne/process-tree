@@ -5,6 +5,7 @@
 
 void output_fn_tree(FILE*, struct tracee*, struct options*);
 void output_fn_json(FILE*, struct tracee*, struct options*);
+void output_fn_plain(FILE*, struct tracee*, struct options*);
 
 typedef struct {
 	const char *name;
@@ -16,6 +17,7 @@ typedef struct {
 static const output_fn_entry_t output_fns[] = {
 	output_fn_entry(tree),
 	output_fn_entry(json),
+	output_fn_entry(plain),
 	{0},
 };
 
