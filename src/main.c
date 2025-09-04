@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <err.h>
 
 #include <sys/ptrace.h>
 #include <sys/wait.h>
@@ -25,7 +26,7 @@ static void handle_syscall(struct tracee *tracee);
 static void handle_new_tracee(int status, struct tracee *tracee);
 static void continue_tracee(long tid);
 
-static void cleanup(void);
+static void exit_fn(void);
 static void sigint_handler(int);
 
 static struct options options = {0};
@@ -47,7 +48,7 @@ int main(int argc, char **argv)
 		root = create_root_tracee_with_attach(options.attach);
 	}
 
-	atexit(cleanup);
+	atexit(exit_fn);
 	signal(SIGINT, sigint_handler);
 
 	for (;;)
@@ -112,7 +113,7 @@ int main(int argc, char **argv)
 	}
 }
 
-static void cleanup(void)
+static void exit_fn(void)
 {
 	if (root)
 	{
@@ -131,9 +132,7 @@ static void continue_tracee(long tid)
 {
 	if (ptrace(PTRACE_SYSCALL, tid, 0, 0) < 0)
 	{
-		fprintf(stderr, "%s: ptrace(PTRACE_SYSCALL, %ld) failed: %s\n",
-		        options.program_name, tid, strerror(errno));
-		exit(EXIT_FAILURE);
+		err(EXIT_FAILURE, "ptrace(PTRACE_SYSCALL, %ld) failed", tid);
 	}
 }
 
@@ -147,9 +146,7 @@ static struct tracee *create_root_tracee_from_command(char **command)
 
 	if (pid < 0)
 	{
-		fprintf(stderr, "%s: Failed to fork process: %s\n",
-		        options.program_name, strerror(errno));
-		exit(EXIT_FAILURE);
+		err(EXIT_FAILURE, "Failed to fork process");
 	}
 
 	if (pid > 0)
@@ -166,9 +163,7 @@ static struct tracee *create_root_tracee_from_command(char **command)
 
 	if (ptrace(PTRACE_TRACEME) < 0)
 	{
-		fprintf(stderr, "%s: ptrace(PTRACE_TRACEME) failed: %s\n",
-		        options.program_name, strerror(errno));
-		exit(EXIT_FAILURE);
+		err(EXIT_FAILURE, "ptrace(PTRACE_TRACEME) failed");
 	}
 
 	if (options.silent)
@@ -177,40 +172,30 @@ static struct tracee *create_root_tracee_from_command(char **command)
 
 		if (devnull == NULL)
 		{
-			fprintf(stderr, "%s: Failed to open /dev/null: %s\n",
-			        options.program_name, strerror(errno));
-			exit(EXIT_FAILURE);
+			err(EXIT_FAILURE, "Failed to open /dev/null");
 		}
 
 		if (dup2(fileno(devnull), STDOUT_FILENO) < 0)
 		{
-			fprintf(stderr, "%s: Failed to redirect stdout to /dev/null: %s\n",
-			        options.program_name, strerror(errno));
-			exit(EXIT_FAILURE);
+			err(EXIT_FAILURE, "Failed to redirect stdout to /dev/null");
 		}
 
 		if (dup2(fileno(devnull), STDERR_FILENO) < 0)
 		{
-			fprintf(stderr, "%s: Failed to redirect stderr to /dev/null: %s\n",
-			        options.program_name, strerror(errno));
-			exit(EXIT_FAILURE);
+			err(EXIT_FAILURE, "Failed to redirect stderr to /dev/null");
 		}
 	}
 	else if (options.redirect)
 	{
 		if (dup2(STDERR_FILENO, STDOUT_FILENO) < 0)
 		{
-			fprintf(stderr, "%s: Failed to redirect stderr to /dev/null: %s\n",
-			        options.program_name, strerror(errno));
-			exit(EXIT_FAILURE);
+			err(EXIT_FAILURE, "Failed to redirect stderr to /dev/null");
 		}
 	}
 
 	if (execvp(command[0], command) < 0)
 	{
-		fprintf(stderr, "%s: Failed to execute %s: %s\n",
-		        options.program_name, command[0], strerror(errno));
-		exit(EXIT_FAILURE);
+		err(EXIT_FAILURE, "Failed to execute %s", command[0]);
 	}
 
 	__builtin_unreachable();
@@ -222,9 +207,7 @@ static struct tracee *create_root_tracee_with_attach(long pid)
 
 	if (ptrace(PTRACE_ATTACH, pid) < 0)
 	{
-		fprintf(stderr, "%s: Failed to attach to process %ld: %s\n",
-		        options.program_name, pid, strerror(errno));
-		exit(EXIT_FAILURE);
+		err(EXIT_FAILURE, "Failed to attach to process %ld", pid);
 	}
 
 	root = tracee_create();
@@ -232,9 +215,7 @@ static struct tracee *create_root_tracee_with_attach(long pid)
 
 	if (tracee_read_info_from_proc_dir(root) < 0)
 	{
-		fprintf(stderr, "%s: Failed to get info about root tracee %ld: %s\n",
-		        options.program_name, pid, strerror(errno));
-		exit(EXIT_FAILURE);
+		err(EXIT_FAILURE, "Failed to get info about root tracee %ld", pid);
 	}
 
 	return root;
@@ -286,9 +267,7 @@ static void handle_new_tracee(int status, struct tracee *tracee)
 	newtid = tracee_get_event_tid(tracee);
 	if (newtid < 0)
 	{
-		fprintf(stderr, "%s: ptrace(PTRACE_GETEVENTMSG, %ld, ...) failed: %s\n",
-		        options.program_name, tracee->tid, strerror(errno));
-		exit(EXIT_FAILURE);
+		err(EXIT_FAILURE, "ptrace(PTRACE_GETEVENTMSG, %ld, ...) failed", tracee->tid);
 	}
 
 	newtracee = tracee_create();
